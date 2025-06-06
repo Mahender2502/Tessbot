@@ -6,7 +6,9 @@ const { PDFDocument } = require('pdf-lib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+const fetch = require('node-fetch'); // For v2
+// or
+import fetch from 'node-fetch';
 // Enable CORS for all routes
 app.use(cors());
 

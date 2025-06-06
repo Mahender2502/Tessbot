@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Downloader</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Document Downloader</h2>
+        <form id="tessbot-form">
+            <label>Access Token:</label><br>
+            <input type="text" id="access-token" /><br>
+            <label>Unit ID:</label><br>
+            <input type="text" id="unit-id" /><br><br>
+            <button type="submit">Generate Merged PDF</button>
+        </form>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processing PDFs...</p>
+        </div>
+
+        <div id="result" class="result">
+            <div id="download-section" class="download-section" style="display: none;">
+                <button id="download-btn" class="download-btn">
+                    Download Merged PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="logs"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('tessbot-form');
+            const loadingDiv = document.getElementById('loading');
+            const downloadSection = document.getElementById('download-section');
+            const downloadBtn = document.getElementById('download-btn');
+            const logsDiv = document.querySelector('.logs');
+            let currentPdfData = null;
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const accessToken = document.getElementById('access-token').value.trim();
+                const unitId = document.getElementById('unit-id').value.trim();
+
+                if (accessToken === '' || unitId === '') {
+                    alert('Please enter Access Token and Unit ID.');
+                    return;
+                }
+
+                // Clear previous results and show loading
+                downloadSection.style.display = 'none';
+                logsDiv.innerHTML = '';
+                loadingDiv.style.display = 'flex';
+
+                fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ accessToken, unitId })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response received:', data);
+
+                    // Hide loading
+                    loadingDiv.style.display = 'none';
+
+                    if (data.pdfData) {
+                        // Store the PDF data
+                        currentPdfData = data.pdfData;
+                        // Show download button
+                        downloadSection.style.display = 'block';
+                    } else {
+                        logsDiv.innerHTML = '<p class="error">No PDFs found for the given parameters.</p>';
+                    }
+
+                    if (data.logs && data.logs.length > 0) {
+                        data.logs.forEach(log => {
+                            const logElement = document.createElement('p');
+                            logElement.textContent = log;
+                            logsDiv.appendChild(logElement);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    loadingDiv.style.display = 'none';
+                    logsDiv.innerHTML = '<p class="error">Failed to generate PDF. Check server console for errors.</p>';
+                });
+            });
+
+            // Handle download button click
+            downloadBtn.addEventListener('click', function() {
+                if (currentPdfData) {
+                    try {
+                        // Create a blob from the base64 data
+                        const binaryString = window.atob(currentPdfData);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        const blob = new Blob([bytes], { type: 'application/pdf' });
+                        
+                        // Create a download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'merged_document.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } catch (error) {
+                        console.error('Error downloading PDF:', error);
+                        logsDiv.innerHTML += '<p class="error">Error downloading PDF. Please try again.</p>';
+                    }
+                } else {
+                    logsDiv.innerHTML += '<p class="error">No PDF data available to download.</p>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

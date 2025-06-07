@@ -23,7 +23,7 @@ async function fetchPDFBuffer(url, accessToken) {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `${accessToken}`,
       },
     });
 

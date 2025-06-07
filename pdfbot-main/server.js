@@ -73,7 +73,7 @@ app.post('/', async (req, res) => {
   try {
     const response = await fetch(API_URL, {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `${accessToken}`,
       },
     });
 

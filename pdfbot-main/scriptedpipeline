@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "jenkins-maven"
+        jdk "jdk_21"
+    }
+
+    stages {
+        stage("git repo and clean") {
+            steps {
+                bat  "rmdir /s /q simple-java-maven-app || exit 0"  
+                bat "git clone https://github.com/jenkins-docs/simple-java-maven-app.git"
+                bat "mvn clean -f simple-java-maven-app/pom.xml"
+            }
+        }
+        stage("install"){
+            steps{
+                bat "mvn install -f simple-java-maven-app/pom.xml"
+            }
+        }
+        stage("test"){
+            steps{
+                bat "mvn test -f simple-java-maven-app/pom.xml"
+            }
+        }
+        stage("package"){
+            steps{
+                bat "mvn package -f simple-java-maven-app/pom.xml"
+            }
+        }
+    }
+}
